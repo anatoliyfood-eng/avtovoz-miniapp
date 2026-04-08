@@ -8,6 +8,9 @@ if (tg) {
   tg.expand();
   tg.enableClosingConfirmation();
 }
+// Застосовуємо тему (light/dark) для правильних кольорів
+const scheme = tg?.colorScheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+document.body.classList.add(`theme-${scheme}`);
 
 // ── Стан додатку ────────────────────────────────
 const state = {
@@ -380,12 +383,13 @@ function renderFuelSummary(data, country) {
 }
 
 function getMockFuel(country) {
+  // Актуальні ціни квітень 2026
   const data = {
-    UA: { avg_diesel: 56.99, avg_gasoline_95: 59.49, currency: "UAH", cheapest_diesel: { station_name: "KLO", price: 55.5, currency: "UAH", city: "Львів" } },
-    PL: { avg_diesel: 6.20, avg_gasoline_95: 6.45, currency: "PLN", cheapest_diesel: { station_name: "Orlen", price: 6.10, currency: "PLN", city: "Жешув" } },
-    SK: { avg_diesel: 1.55, avg_gasoline_95: 1.65, currency: "EUR", cheapest_diesel: null },
-    HU: { avg_diesel: 620, avg_gasoline_95: 650, currency: "HUF", cheapest_diesel: null },
-    RO: { avg_diesel: 7.20, avg_gasoline_95: 7.55, currency: "RON", cheapest_diesel: null },
+    UA: { avg_diesel: 91.90, avg_gasoline_95: 79.50, currency: "UAH", cheapest_diesel: { station_name: "ANP", price: 89.00, currency: "UAH", city: "Україна" } },
+    PL: { avg_diesel: 6.35, avg_gasoline_95: 6.58, currency: "PLN", cheapest_diesel: { station_name: "Orlen", price: 6.30, currency: "PLN", city: "Польща" } },
+    SK: { avg_diesel: 1.52, avg_gasoline_95: 1.62, currency: "EUR", cheapest_diesel: { station_name: "Slovnaft", price: 1.51, currency: "EUR", city: "Словаччина" } },
+    HU: { avg_diesel: 635, avg_gasoline_95: 655, currency: "HUF", cheapest_diesel: { station_name: "MOL", price: 628, currency: "HUF", city: "Угорщина" } },
+    RO: { avg_diesel: 7.38, avg_gasoline_95: 7.65, currency: "RON", cheapest_diesel: { station_name: "Petrom", price: 7.30, currency: "RON", city: "Румунія" } },
   };
   return data[country] || data.UA;
 }

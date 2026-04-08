@@ -370,9 +370,24 @@ function renderFuelSummary(data, country) {
     </div>
   `;
 
-  if (data.cheapest_diesel) {
+  const stationsEl = document.getElementById("fuel-stations");
+  if (data.stations && data.stations.length) {
+    stationsEl.innerHTML = `<h3 style="margin:14px 0 8px">⛽ Ціни по заправках</h3>` +
+      data.stations.map(s => `
+        <div class="fuel-station-row">
+          <div>
+            <div class="fuel-station-name">${s.name}</div>
+            <div style="font-size:11px;color:var(--hint)">🛢 Дизель · ⛽ А-95</div>
+          </div>
+          <div style="text-align:right">
+            <div class="fuel-station-price">${s.diesel.toFixed(2)}</div>
+            <div style="font-size:12px;color:var(--hint)">${s.gasoline_95.toFixed(2)} ${data.currency}</div>
+          </div>
+        </div>
+      `).join("");
+  } else if (data.cheapest_diesel) {
     const { station_name, price, currency, city } = data.cheapest_diesel;
-    document.getElementById("fuel-stations").innerHTML = `
+    stationsEl.innerHTML = `
       <div class="border-card">
         <div class="border-card-name">✅ Найдешевший дизель</div>
         <div style="font-size:22px;font-weight:800;color:var(--link)">${price.toFixed(2)} ${currency}/л</div>
@@ -385,11 +400,76 @@ function renderFuelSummary(data, country) {
 function getMockFuel(country) {
   // Актуальні ціни квітень 2026
   const data = {
-    UA: { avg_diesel: 91.90, avg_gasoline_95: 79.50, currency: "UAH", cheapest_diesel: { station_name: "ANP", price: 89.00, currency: "UAH", city: "Україна" } },
-    PL: { avg_diesel: 6.35, avg_gasoline_95: 6.58, currency: "PLN", cheapest_diesel: { station_name: "Orlen", price: 6.30, currency: "PLN", city: "Польща" } },
-    SK: { avg_diesel: 1.52, avg_gasoline_95: 1.62, currency: "EUR", cheapest_diesel: { station_name: "Slovnaft", price: 1.51, currency: "EUR", city: "Словаччина" } },
-    HU: { avg_diesel: 635, avg_gasoline_95: 655, currency: "HUF", cheapest_diesel: { station_name: "MOL", price: 628, currency: "HUF", city: "Угорщина" } },
-    RO: { avg_diesel: 7.38, avg_gasoline_95: 7.65, currency: "RON", cheapest_diesel: { station_name: "Petrom", price: 7.30, currency: "RON", city: "Румунія" } },
+    UA: { avg_diesel: 91.90, avg_gasoline_95: 79.50, currency: "UAH",
+      cheapest_diesel: { station_name: "ANP", price: 89.00, currency: "UAH", city: "Україна" },
+      stations: [
+        { name: "ОККО", diesel: 92.00, gasoline_95: 79.90 },
+        { name: "WOG", diesel: 91.90, gasoline_95: 80.00 },
+        { name: "KLO", diesel: 91.80, gasoline_95: 78.09 },
+      ]},
+    PL: { avg_diesel: 8.55, avg_gasoline_95: 6.77, currency: "PLN",
+      cheapest_diesel: { station_name: "Orlen", price: 8.45, currency: "PLN", city: "Польща" },
+      stations: [
+        { name: "Orlen", diesel: 8.45, gasoline_95: 6.69 },
+        { name: "BP", diesel: 8.59, gasoline_95: 6.79 },
+        { name: "Shell", diesel: 8.65, gasoline_95: 6.85 },
+      ]},
+    DE: { avg_diesel: 2.31, avg_gasoline_95: 2.18, currency: "EUR",
+      cheapest_diesel: { station_name: "Aral", price: 2.28, currency: "EUR", city: "Німеччина" },
+      stations: [
+        { name: "Aral", diesel: 2.28, gasoline_95: 2.15 },
+        { name: "Shell", diesel: 2.33, gasoline_95: 2.19 },
+        { name: "Total", diesel: 2.31, gasoline_95: 2.17 },
+      ]},
+    NL: { avg_diesel: 2.46, avg_gasoline_95: 2.33, currency: "EUR",
+      cheapest_diesel: { station_name: "Tango", price: 2.35, currency: "EUR", city: "Нідерланди" },
+      stations: [
+        { name: "Tango", diesel: 2.35, gasoline_95: 2.22 },
+        { name: "TinQ", diesel: 2.40, gasoline_95: 2.28 },
+        { name: "Shell", diesel: 2.55, gasoline_95: 2.42 },
+      ]},
+    FR: { avg_diesel: 2.25, avg_gasoline_95: 1.99, currency: "EUR",
+      cheapest_diesel: { station_name: "Leclerc", price: 2.15, currency: "EUR", city: "Франція" },
+      stations: [
+        { name: "Leclerc", diesel: 2.15, gasoline_95: 1.89 },
+        { name: "Intermarché", diesel: 2.18, gasoline_95: 1.92 },
+        { name: "TotalEnergies", diesel: 2.25, gasoline_95: 1.99 },
+      ]},
+    IT: { avg_diesel: 2.18, avg_gasoline_95: 1.79, currency: "EUR",
+      cheapest_diesel: { station_name: "Eni", price: 2.01, currency: "EUR", city: "Італія" },
+      stations: [
+        { name: "Eni", diesel: 2.01, gasoline_95: 1.76 },
+        { name: "IP", diesel: 2.20, gasoline_95: 1.79 },
+        { name: "Q8", diesel: 2.18, gasoline_95: 1.80 },
+      ]},
+    HU: { avg_diesel: 615, avg_gasoline_95: 595, currency: "HUF",
+      cheapest_diesel: { station_name: "MOL", price: 609, currency: "HUF", city: "Угорщина" },
+      stations: [
+        { name: "MOL", diesel: 609, gasoline_95: 589 },
+        { name: "Shell", diesel: 619, gasoline_95: 599 },
+        { name: "OMV", diesel: 615, gasoline_95: 595 },
+      ]},
+    SK: { avg_diesel: 1.62, avg_gasoline_95: 1.66, currency: "EUR",
+      cheapest_diesel: { station_name: "Slovnaft", price: 1.58, currency: "EUR", city: "Словаччина" },
+      stations: [
+        { name: "Slovnaft", diesel: 1.58, gasoline_95: 1.62 },
+        { name: "OMV", diesel: 1.65, gasoline_95: 1.68 },
+        { name: "Shell", diesel: 1.67, gasoline_95: 1.70 },
+      ]},
+    CZ: { avg_diesel: 49.59, avg_gasoline_95: 43.15, currency: "CZK",
+      cheapest_diesel: { station_name: "Orlen", price: 48.90, currency: "CZK", city: "Чехія" },
+      stations: [
+        { name: "Orlen", diesel: 48.90, gasoline_95: 42.50 },
+        { name: "MOL", diesel: 49.50, gasoline_95: 43.00 },
+        { name: "Shell", diesel: 49.90, gasoline_95: 43.50 },
+      ]},
+    RO: { avg_diesel: 10.37, avg_gasoline_95: 9.18, currency: "RON",
+      cheapest_diesel: { station_name: "Petrom", price: 10.25, currency: "RON", city: "Румунія" },
+      stations: [
+        { name: "Petrom", diesel: 10.25, gasoline_95: 9.10 },
+        { name: "OMV", diesel: 10.40, gasoline_95: 9.20 },
+        { name: "MOL", diesel: 10.35, gasoline_95: 9.15 },
+      ]},
   };
   return data[country] || data.UA;
 }

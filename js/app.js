@@ -583,10 +583,28 @@ async function generateDocument(docType) {
       throw new Error(data.error || "Помилка генерації");
     }
   } catch (e) {
-    // Якщо API недоступне — відправляємо в бот через Telegram
-    sendTg("generate_doc", payload);
-    closeModal();
-    tg?.showAlert(`Запит на ${docType.toUpperCase()} відправлено боту. Документ буде надіслано у чат.`);
+    // Спробуємо через tg.sendData (працює тільки з reply keyboard кнопки)
+    if (tg?.sendData) {
+      try {
+        sendTg("generate_doc", payload);
+        closeModal();
+        tg?.showAlert(`Запит на ${docType.toUpperCase()} відправлено боту. Документ буде надіслано у чат.`);
+        return;
+      } catch (_) {}
+    }
+    // API недоступне і sendData не підтримується
+    document.getElementById("modal-body").innerHTML = `
+      <div style="text-align:center;padding:24px">
+        <div style="font-size:48px">❌</div>
+        <div style="font-size:15px;font-weight:700;margin:12px 0">API сервер недоступний</div>
+        <div style="color:var(--hint);margin-bottom:16px;font-size:13px">
+          Перевірте що бот запущений і тунель активний.<br>
+          Або скористайтесь документами через бот: /docs
+        </div>
+        <button class="primary-btn" onclick="closeModal()">Закрити</button>
+      </div>
+    `;
+    haptic("error");
   }
 }
 

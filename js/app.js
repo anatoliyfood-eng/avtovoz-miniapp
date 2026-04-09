@@ -355,20 +355,28 @@ async function loadFuelCountry(country) {
 }
 
 function renderFuelSummary(data, country) {
-  const flags = { UA: "🇺🇦", PL: "🇵🇱", SK: "🇸🇰", HU: "🇭🇺", RO: "🇷🇴" };
+  const flags = { UA: "🇺🇦", PL: "🇵🇱", SK: "🇸🇰", HU: "🇭🇺", RO: "🇷🇴", DE: "🇩🇪", NL: "🇳🇱", FR: "🇫🇷", IT: "🇮🇹", CZ: "🇨🇿" };
   const summaryEl = document.getElementById("fuel-summary");
-  summaryEl.innerHTML = `
+  let cards = `
     <div class="fuel-card">
-      <div class="fuel-type">🛢 Дизель ${flags[country] || ""}</div>
+      <div class="fuel-type">🛢 ДП ${flags[country] || ""}</div>
       <div class="fuel-price">${(data.avg_diesel || 0).toFixed(2)}</div>
       <div class="fuel-unit">${data.currency || "UAH"}/л</div>
     </div>
     <div class="fuel-card">
-      <div class="fuel-type">⛽ Бензин А-95</div>
+      <div class="fuel-type">⛽ А-95</div>
       <div class="fuel-price">${(data.avg_gasoline_95 || 0).toFixed(2)}</div>
       <div class="fuel-unit">${data.currency || "UAH"}/л</div>
-    </div>
-  `;
+    </div>`;
+  if (data.avg_gas !== undefined && data.avg_gas > 0) {
+    cards += `
+    <div class="fuel-card">
+      <div class="fuel-type">🔵 Газ (LPG)</div>
+      <div class="fuel-price">${data.avg_gas.toFixed(2)}</div>
+      <div class="fuel-unit">${data.currency || "UAH"}/л</div>
+    </div>`;
+  }
+  summaryEl.innerHTML = cards;
 
   const stationsEl = document.getElementById("fuel-stations");
   if (data.stations && data.stations.length) {
@@ -377,11 +385,11 @@ function renderFuelSummary(data, country) {
         <div class="fuel-station-row">
           <div>
             <div class="fuel-station-name">${s.name}</div>
-            <div style="font-size:11px;color:var(--hint)">🛢 Дизель · ⛽ А-95</div>
+            <div style="font-size:11px;color:var(--hint)">🛢 ДП · ⛽ А-95${s.gas ? ' · 🔵 Газ' : ''}</div>
           </div>
           <div style="text-align:right">
-            <div class="fuel-station-price">${s.diesel.toFixed(2)}</div>
-            <div style="font-size:12px;color:var(--hint)">${s.gasoline_95.toFixed(2)} ${data.currency}</div>
+            <div class="fuel-station-price">${(s.diesel||0).toFixed(2)}</div>
+            <div style="font-size:12px;color:var(--hint)">${(s.gasoline_95||0).toFixed(2)}${s.gas ? ' · ' + s.gas.toFixed(2) : ''} ${data.currency}</div>
           </div>
         </div>
       `).join("");
@@ -400,12 +408,12 @@ function renderFuelSummary(data, country) {
 function getMockFuel(country) {
   // Актуальні ціни квітень 2026
   const data = {
-    UA: { avg_diesel: 91.90, avg_gasoline_95: 79.50, currency: "UAH",
+    UA: { avg_diesel: 91.90, avg_gasoline_95: 79.50, avg_gas: 49.50, currency: "UAH",
       cheapest_diesel: { station_name: "ANP", price: 89.00, currency: "UAH", city: "Україна" },
       stations: [
-        { name: "ОККО", diesel: 92.00, gasoline_95: 79.90 },
-        { name: "WOG", diesel: 91.90, gasoline_95: 80.00 },
-        { name: "KLO", diesel: 91.80, gasoline_95: 78.09 },
+        { name: "ОККО", diesel: 92.00, gasoline_95: 79.90, gas: 49.90 },
+        { name: "WOG", diesel: 91.90, gasoline_95: 80.00, gas: 49.99 },
+        { name: "KLO", diesel: 91.80, gasoline_95: 78.09, gas: 48.90 },
       ]},
     PL: { avg_diesel: 8.55, avg_gasoline_95: 6.77, currency: "PLN",
       cheapest_diesel: { station_name: "Orlen", price: 8.45, currency: "PLN", city: "Польща" },
@@ -624,37 +632,50 @@ function buildDocForm(docType) {
 }
 
 async function generateDocument(docType) {
-  const userId = tg?.initDataUnsafe?.user?.id;
+  const userId = tg?.initDataUnsafe?.user?.id || "";
   const payload = {
     doc_type: docType,
     user_id: userId,
-    sender_name: document.getElementById("f-sender")?.value,
-    sender_address: document.getElementById("f-sender-addr")?.value,
-    consignee_name: document.getElementById("f-consignee")?.value,
-    consignee_address: document.getElementById("f-consignee-addr")?.value,
-    loading_place: document.getElementById("f-loading")?.value,
-    delivery_place: document.getElementById("f-delivery")?.value,
-    cargo_raw: document.getElementById("f-cargo")?.value,
+    sender_name: document.getElementById("f-sender")?.value || "",
+    sender_address: document.getElementById("f-sender-addr")?.value || "",
+    consignee_name: document.getElementById("f-consignee")?.value || "",
+    consignee_address: document.getElementById("f-consignee-addr")?.value || "",
+    loading_place: document.getElementById("f-loading")?.value || "",
+    delivery_place: document.getElementById("f-delivery")?.value || "",
+    cargo_raw: document.getElementById("f-cargo")?.value || "",
     cargo_weight: parseFloat(document.getElementById("f-weight")?.value) || 0,
     freight_cost: parseFloat(document.getElementById("f-freight")?.value) || 0,
   };
 
+  // Перевіряємо що хоча б основні поля заповнені
+  if (!payload.sender_name && !payload.consignee_name) {
+    tg?.showAlert("Заповніть хоча б відправника та одержувача");
+    return;
+  }
+
   document.getElementById("modal-body").innerHTML = '<div class="loading">⏳ Генерую документ...</div>';
 
+  // Спосіб 1: через API (працює коли тунель активний)
+  let apiSuccess = false;
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const resp = await apiFetch(`${API_BASE}/api/generate-doc`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     const data = await resp.json();
 
     if (data.success) {
+      apiSuccess = true;
       document.getElementById("modal-body").innerHTML = `
         <div style="text-align:center;padding:24px">
           <div style="font-size:48px">✅</div>
           <div style="font-size:17px;font-weight:700;margin:12px 0">${docType.toUpperCase()} готовий!</div>
-          <div style="color:var(--hint);margin-bottom:16px">Документ надіслано у Telegram</div>
+          <div style="color:var(--hint);margin-bottom:16px">Документ надіслано у чат Telegram</div>
           <button class="primary-btn" onclick="closeModal()">Закрити</button>
         </div>
       `;
@@ -663,29 +684,41 @@ async function generateDocument(docType) {
       throw new Error(data.error || "Помилка генерації");
     }
   } catch (e) {
-    // Спробуємо через tg.sendData (працює тільки з reply keyboard кнопки)
-    if (tg?.sendData) {
-      try {
-        sendTg("generate_doc", payload);
-        closeModal();
-        tg?.showAlert(`Запит на ${docType.toUpperCase()} відправлено боту. Документ буде надіслано у чат.`);
-        return;
-      } catch (_) {}
-    }
-    // API недоступне і sendData не підтримується
-    document.getElementById("modal-body").innerHTML = `
-      <div style="text-align:center;padding:24px">
-        <div style="font-size:48px">❌</div>
-        <div style="font-size:15px;font-weight:700;margin:12px 0">API сервер недоступний</div>
-        <div style="color:var(--hint);margin-bottom:16px;font-size:13px">
-          Перевірте що бот запущений і тунель активний.<br>
-          Або скористайтесь документами через бот: /docs
-        </div>
-        <button class="primary-btn" onclick="closeModal()">Закрити</button>
-      </div>
-    `;
-    haptic("error");
+    console.log("API doc gen failed:", e.message);
   }
+
+  if (apiSuccess) return;
+
+  // Спосіб 2: через tg.sendData (fallback)
+  try {
+    if (tg?.sendData) {
+      sendTg("generate_doc", payload);
+      document.getElementById("modal-body").innerHTML = `
+        <div style="text-align:center;padding:24px">
+          <div style="font-size:48px">📨</div>
+          <div style="font-size:17px;font-weight:700;margin:12px 0">Запит відправлено</div>
+          <div style="color:var(--hint);margin-bottom:16px">${docType.toUpperCase()} буде надіслано у чат</div>
+          <button class="primary-btn" onclick="closeModal()">Закрити</button>
+        </div>
+      `;
+      haptic("success");
+      return;
+    }
+  } catch (_) {}
+
+  // Нічого не спрацювало
+  document.getElementById("modal-body").innerHTML = `
+    <div style="text-align:center;padding:24px">
+      <div style="font-size:48px">❌</div>
+      <div style="font-size:15px;font-weight:700;margin:12px 0">API сервер недоступний</div>
+      <div style="color:var(--hint);margin-bottom:16px;font-size:13px">
+        Перевірте що бот запущений і тунель активний.<br>
+        Або створіть документ через бот: кнопка 📄 Документи
+      </div>
+      <button class="primary-btn" onclick="closeModal()">Закрити</button>
+    </div>
+  `;
+  haptic("error");
 }
 
 // ── Ініціалізація ─────────────────────────────────

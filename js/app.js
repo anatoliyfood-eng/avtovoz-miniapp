@@ -58,6 +58,11 @@ function showTab(tabName) {
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
   document.getElementById(`tab-${tabName}`)?.classList.add("active");
   document.querySelector(`[data-tab="${tabName}"]`)?.classList.add("active");
+
+  // Якщо переходимо з кордонів — зупиняємо таймер
+  if (state.activeTab === "borders" && tabName !== "borders") {
+    clearTimeout(_bordersRefreshTimer);
+  }
   state.activeTab = tabName;
   haptic("impact");
 
@@ -76,15 +81,31 @@ function showTab(tabName) {
 // ── КОРДОНИ ──────────────────────────────────────
 // ════════════════════════════════════════════════
 
+let _bordersRefreshTimer = null;
+
 async function loadBorders() {
-  showLoading("borders-list");
+  const container = document.getElementById("borders-list");
+  if (container && container.innerHTML.indexOf("border-card") === -1) {
+    showLoading("borders-list");
+  }
   try {
     const resp = await apiFetch(`${API_BASE}/api/borders?country=${state.currentCountry}`);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
     const data = await resp.json();
-    renderBorders(data.borders || getMockBorders());
-  } catch {
-    renderBorders(getMockBorders());
+    const borders = data.borders || [];
+    if (borders.length > 0) {
+      renderBorders(borders, data.updated_at);
+    } else {
+      renderBorders(getMockBorders(), null, true);
+    }
+  } catch (e) {
+    renderBorders(getMockBorders(), null, true);
   }
+  // Автооновлення кожні 2 хвилини поки вкладка активна
+  clearTimeout(_bordersRefreshTimer);
+  _bordersRefreshTimer = setTimeout(() => {
+    if (state.activeTab === "borders") loadBorders();
+  }, 120000);
 }
 
 function filterBorders(country) {
@@ -94,22 +115,30 @@ function filterBorders(country) {
   loadBorders();
 }
 
-function renderBorders(borders) {
+function renderBorders(borders, updatedAt, isMock) {
   const container = document.getElementById("borders-list");
   if (!borders.length) {
     container.innerHTML = '<div class="empty-state">Дані тимчасово недоступні</div>';
     return;
   }
 
-  container.innerHTML = borders.map(b => {
+  const sourceLabel = isMock
+    ? '<div style="background:#2a1a0a;color:#f59e0b;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:8px">⚠️ Показано орієнтовні дані (API недоступний)</div>'
+    : updatedAt
+      ? `<div style="color:#8b92a5;font-size:11px;padding:4px 0 8px;text-align:right">🔄 Оновлено: ${updatedAt}</div>`
+      : '';
+
+  container.innerHTML = sourceLabel + borders.map(b => {
     const maxWait = Math.max(b.wait_out_minutes || 0, b.wait_in_minutes || 0);
     const severity = maxWait < 30 ? "" : maxWait < 180 ? "warning" : "critical";
     const dotColor = maxWait < 30 ? "#22c55e" : maxWait < 180 ? "#f59e0b" : "#ef4444";
+    const flag = b.country ? b.country.replace(/[^🇦-🇿]/g, "").slice(0, 4) : "";
 
     return `
       <div class="border-card ${severity}">
         <div class="border-card-name">
           <span style="color:${dotColor}">●</span> ${b.crossing_name}
+          <span style="float:right;font-size:11px;color:#8b92a5">${b.country || ""}</span>
         </div>
         <div class="border-directions">
           <div class="direction-block">
@@ -123,7 +152,7 @@ function renderBorders(borders) {
             <div class="direction-wait">⏱ ${formatWait(b.wait_in_minutes)}</div>
           </div>
         </div>
-        <div class="border-source">📡 ${b.source || "ДПСУ"} · ${b.country || ""}</div>
+        <div class="border-source">📡 ${b.source || "ДПСУ"} · ${b.last_updated || ""}</div>
       </div>
     `;
   }).join("");

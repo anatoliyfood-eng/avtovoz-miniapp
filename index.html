@@ -122,38 +122,20 @@
         <button class="primary-btn" onclick="startNavigation()">▶️ Почати моніторинг маршруту</button>
       </section>
 
-      <!-- ═══ ДОКУМЕНТИ ═══ -->
+      <!-- ═══ ДОКУМЕНТИ (АРХІВ) ═══ -->
       <section id="tab-docs" class="tab">
         <div class="section-header">
-          <h2>📄 Документи</h2>
+          <h2>📁 Архів документів</h2>
+          <button class="refresh-btn" onclick="loadDocs()">🔄</button>
         </div>
 
-        <div class="doc-grid">
-          <div class="doc-card" onclick="openDocForm('cmr')">
-            <div class="doc-icon">📦</div>
-            <div class="doc-name">CMR</div>
-            <div class="doc-desc">Міжнародна накладна<br>A4 · Женева 1956</div>
-          </div>
-          <div class="doc-card" onclick="openDocForm('ttn')">
-            <div class="doc-icon">📋</div>
-            <div class="doc-name">ТТН</div>
-            <div class="doc-desc">Товарно-транспортна<br>A4 · Форма №1-ТН</div>
-          </div>
-          <div class="doc-card" onclick="openDocForm('invoice')">
-            <div class="doc-icon">💰</div>
-            <div class="doc-name">Invoice</div>
-            <div class="doc-desc">Рахунок-фактура<br>A4 · Міжнародний</div>
-          </div>
-          <div class="doc-card" onclick="openDocForm('t1')">
-            <div class="doc-icon">🌐</div>
-            <div class="doc-name">T1</div>
-            <div class="doc-desc">Транзит ЄС<br>A4 · Стандарт EU</div>
-          </div>
+        <div style="background:#1a2236;border-radius:12px;padding:12px;margin-bottom:12px;color:#8b92a5;font-size:13px;">
+          💡 Документи створюються в боті через кнопку <b>📄 Документи</b>.<br>
+          Тут зберігається архів усіх ваших CMR і ТТН.
         </div>
 
-        <h3 style="margin: 16px 0 8px;">📁 Останні документи</h3>
         <div id="docs-list">
-          <div class="empty-state">Документів ще немає</div>
+          <div class="loading">⏳ Завантаження...</div>
         </div>
       </section>
 

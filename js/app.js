@@ -66,6 +66,7 @@ function showTab(tabName) {
     borders: loadBorders,
     fuel: loadFuel,
     trips: loadTrips,
+    docs: loadDocs,
     map: initMap,
   };
   loaders[tabName]?.();
@@ -480,6 +481,66 @@ function getMockFuel(country) {
       ]},
   };
   return data[country] || data.UA;
+}
+
+// ════════════════════════════════════════════════
+// ════════════════════════════════════════════════
+// ── ДОКУМЕНТИ (АРХІВ) ────────────────────────────
+// ════════════════════════════════════════════════
+
+async function loadDocs() {
+  const container = document.getElementById("docs-list");
+  if (!container) return;
+  container.innerHTML = '<div class="loading">⏳ Завантаження...</div>';
+
+  const userId = tg?.initDataUnsafe?.user?.id;
+  if (!userId) {
+    container.innerHTML = '<div class="empty-state">Увійдіть через Telegram щоб побачити документи</div>';
+    return;
+  }
+
+  try {
+    const resp = await apiFetch(`${API_BASE}/api/docs?user_id=${userId}`);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    const docs = data.docs || [];
+
+    if (!docs.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div style="font-size:32px;margin-bottom:8px">📄</div>
+          <div>Документів ще немає</div>
+          <div style="font-size:12px;color:#8b92a5;margin-top:6px">
+            Створіть перший документ в боті через кнопку 📄 Документи
+          </div>
+        </div>`;
+      return;
+    }
+
+    const typeIcon = { CMR: "📦", TTN: "📋", ТТН: "📋", INVOICE: "💰" };
+
+    container.innerHTML = docs.map(doc => `
+      <div class="doc-archive-card">
+        <div class="doc-archive-icon">${typeIcon[doc.type] || "📄"}</div>
+        <div class="doc-archive-info">
+          <div class="doc-archive-title">
+            <b>${doc.type}</b> ${doc.number ? `<span style="color:#8b92a5">${doc.number}</span>` : ""}
+          </div>
+          <div class="doc-archive-shipper">📤 ${doc.shipper}</div>
+          <div class="doc-archive-consignee">📥 ${doc.consignee}</div>
+          <div class="doc-archive-date">🗓 ${doc.date} ${doc.time}</div>
+        </div>
+      </div>
+    `).join("");
+
+  } catch (e) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div>⚠️ Не вдалось завантажити</div>
+        <div style="font-size:12px;color:#8b92a5;margin-top:6px">${e.message}</div>
+        <button class="primary-btn" style="margin-top:12px" onclick="loadDocs()">🔄 Спробувати знову</button>
+      </div>`;
+  }
 }
 
 // ════════════════════════════════════════════════

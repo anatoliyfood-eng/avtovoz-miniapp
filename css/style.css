@@ -236,6 +236,24 @@ html, body {
 .doc-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 .doc-desc { font-size: 10px; color: var(--hint); line-height: 1.4; }
 
+/* Архів документів */
+.doc-archive-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.doc-archive-icon { font-size: 28px; flex-shrink: 0; }
+.doc-archive-info { flex: 1; min-width: 0; }
+.doc-archive-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.doc-archive-shipper { font-size: 12px; color: var(--text); margin-bottom: 2px; }
+.doc-archive-consignee { font-size: 12px; color: var(--hint); margin-bottom: 2px; }
+.doc-archive-date { font-size: 11px; color: var(--hint); }
+
 /* ─── Fuel ────────────────────────────────── */
 .fuel-summary {
   display: grid; grid-template-columns: 1fr 1fr;

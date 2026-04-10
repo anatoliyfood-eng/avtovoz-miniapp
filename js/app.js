@@ -132,8 +132,6 @@ function renderBorders(borders, updatedAt, isMock) {
     const maxWait = Math.max(b.wait_out_minutes || 0, b.wait_in_minutes || 0);
     const severity = maxWait < 30 ? "" : maxWait < 180 ? "warning" : "critical";
     const dotColor = maxWait < 30 ? "#22c55e" : maxWait < 180 ? "#f59e0b" : "#ef4444";
-    const flag = b.country ? b.country.replace(/[^🇦-🇿]/g, "").slice(0, 4) : "";
-
     return `
       <div class="border-card ${severity}">
         <div class="border-card-name">

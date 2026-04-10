@@ -30,10 +30,17 @@ const state = {
 // ── API Base URL ────────────────────────────────
 const API_BASE = new URLSearchParams(window.location.search).get('api') || window.location.origin;
 
-// ── Fetch з ngrok-skip-browser-warning ──────────
+// ── initData для авторизації на сервері ─────────
+const _initData = tg?.initData || "";
+
+// ── Fetch з авторизацією через TMA initData ──────
 const apiFetch = (url, opts = {}) => fetch(url, {
   ...opts,
-  headers: { "ngrok-skip-browser-warning": "true", ...(opts.headers || {}) },
+  headers: {
+    "ngrok-skip-browser-warning": "true",
+    "X-Init-Data": _initData,
+    ...(opts.headers || {}),
+  },
 });
 
 // ── Утилети ─────────────────────────────────────
